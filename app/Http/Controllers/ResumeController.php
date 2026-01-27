@@ -7,18 +7,16 @@ use Illuminate\Http\Request;
 
 class ResumeController extends Controller
 {
-    /**
-     * CREATE RESUME
-     */
+    //Create resume
     public function store(Request $request)
     {
-        $user = $request->user; // from VerifyJWT middleware
+        $user = $request->user;
 
-        if (
-            !$request->resume_name ||
-            !$request->template_id ||
-            !$request->form_data
-        ) {
+        $resumeName = $request->resumeName;
+        $templateId = $request->templateId;
+        $formData   = $request->formData;
+
+        if (!$resumeName || !$templateId || !$formData) {
             return response()->json([
                 'message' => 'Data is missing.'
             ], 400);
@@ -26,28 +24,43 @@ class ResumeController extends Controller
 
         $resume = Resume::create([
             'user_id'     => $user->id,
-            'resume_name' => $request->resume_name,
-            'template_id' => $request->template_id,
-            'form_data'   => $request->form_data,
+            'resume_name' => $resumeName,
+            'template_id' => $templateId,
+            'form_data'   => $formData,
         ]);
 
         return response()->json([
             'status' => 201,
-            'data' => $resume,
+            'data' => [
+                'id' => $resume->id,
+                'resumeName' => $resume->resume_name,
+                'templateId' => $resume->template_id,
+                'formData' => $resume->form_data,
+                'createdAt' => $resume->created_at,
+                'updatedAt' => $resume->updated_at,
+            ],
             'message' => 'Resume saved successfully'
         ], 201);
     }
 
-    /**
-     * GET ALL RESUMES OF LOGGED-IN USER
-     */
+    //get all resume of logged in user
     public function index(Request $request)
     {
         $user = $request->user;
 
         $resumes = Resume::where('user_id', $user->id)
             ->orderBy('updated_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($resume) {
+                return [
+                    'id' => $resume->id,
+                    'resumeName' => $resume->resume_name,
+                    'templateId' => $resume->template_id,
+                    'formData' => $resume->form_data,
+                    'createdAt' => $resume->created_at,
+                    'updatedAt' => $resume->updated_at,
+                ];
+            });
 
         return response()->json([
             'status' => 200,
@@ -56,9 +69,7 @@ class ResumeController extends Controller
         ]);
     }
 
-    /**
-     * GET RESUME BY ID (OWNERSHIP CHECK)
-     */
+    //get resume by id
     public function show(Request $request, $id)
     {
         $user = $request->user;
@@ -69,20 +80,25 @@ class ResumeController extends Controller
 
         if (!$resume) {
             return response()->json([
-                'message' => 'Resume not found for the ID or does not belong to you'
+                'message' => 'Resume not found or not authorized'
             ], 404);
         }
 
         return response()->json([
             'status' => 200,
-            'data' => $resume,
+            'data' => [
+                'id' => $resume->id,
+                'resumeName' => $resume->resume_name,
+                'templateId' => $resume->template_id,
+                'formData' => $resume->form_data,
+                'createdAt' => $resume->created_at,
+                'updatedAt' => $resume->updated_at,
+            ],
             'message' => 'Resume fetched successfully'
         ]);
     }
 
-    /**
-     * UPDATE RESUME (OWNERSHIP CHECK)
-     */
+    //update resume
     public function update(Request $request, $id)
     {
         $user = $request->user;
@@ -97,18 +113,27 @@ class ResumeController extends Controller
             ], 404);
         }
 
-        $resume->update($request->all());
+        $resume->update([
+            'resume_name' => $request->resumeName ?? $resume->resume_name,
+            'template_id' => $request->templateId ?? $resume->template_id,
+            'form_data'   => $request->formData ?? $resume->form_data,
+        ]);
 
         return response()->json([
             'status' => 200,
-            'data' => $resume,
+            'data' => [
+                'id' => $resume->id,
+                'resumeName' => $resume->resume_name,
+                'templateId' => $resume->template_id,
+                'formData' => $resume->form_data,
+                'createdAt' => $resume->created_at,
+                'updatedAt' => $resume->updated_at,
+            ],
             'message' => 'Resume updated successfully'
         ]);
     }
 
-    /**
-     * DELETE RESUME (OWNERSHIP CHECK)
-     */
+    //delete resume
     public function destroy(Request $request, $id)
     {
         $user = $request->user;

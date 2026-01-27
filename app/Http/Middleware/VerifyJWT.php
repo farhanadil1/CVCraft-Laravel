@@ -32,7 +32,7 @@ class VerifyJWT
             );
 
             // 3. Find user
-            $user = User::select('id', 'email', 'name', 'created_at')
+            $user = User::select('id', 'email', 'full_name', 'role', 'created_at')
                 ->find($decoded->_id);
 
             if (!$user) {

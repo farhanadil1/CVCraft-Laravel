@@ -4,16 +4,14 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
-
     protected $fillable = [
         'email',
-        'name',
+        'full_name',
         'password',
+        'role',
         'refresh_token',
     ];
 
@@ -23,8 +21,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Automatically hash password
-     * (Equivalent to mongoose pre('save'))
+     * Auto-hash password 
      */
     public function setPasswordAttribute($value)
     {
@@ -35,10 +32,26 @@ class User extends Authenticatable
 
     /**
      * Compare password
-     * (Equivalent to userSchema.methods.comparePassword)
      */
     public function comparePassword(string $password): bool
     {
         return Hash::check($password, $this->password);
+    }
+
+    /**
+     * Role helpers
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
+    }
+    public function getNameAttribute()
+    {
+        return $this->full_name;
     }
 }

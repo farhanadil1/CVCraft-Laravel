@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ResumeController;
@@ -27,4 +28,9 @@ Route::middleware('verify.jwt')->group(function () {
     Route::put('/resume/update/{id}', [ResumeController::class, 'update']);
 
     Route::delete('/resume/delete/{id}', [ResumeController::class, 'destroy']);
+});
+// Admin routes
+Route::middleware('verify.jwt')->group(function () {
+
+    Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
 });

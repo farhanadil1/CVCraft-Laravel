@@ -16,10 +16,11 @@ class AuthController extends Controller
     {
         $accessToken = JWT::encode(
             [
-                '_id'   => $user->id,
-                'email' => $user->email,
-                'name' => $user->name,
-                'exp'  => time() + (int) env('ACCESS_TOKEN_EXPIRY', 3600),
+                '_id'       => $user->id,
+                'email'     => $user->email,
+                'full_name' => $user->full_name,
+                'role'      => $user->role,
+                'exp'       => time() + (int) env('ACCESS_TOKEN_EXPIRY', 3600),
             ],
             env('ACCESS_TOKEN_SECRET'),
             'HS256'
@@ -50,13 +51,14 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email'    => 'required|email|unique:users,email',
-            'fullName' => 'required|string',
-            'password' => [
+            'email'     => 'required|email|unique:users,email',
+            'fullName'  => 'required|string',
+            'password'  => [
                 'required',
                 'min:8',
                 'regex:/^(?=.*[!@#$%^&*(),.?":{}|<>]).+$/'
             ],
+            'role' => 'in:admin,user'
         ]);
 
         if ($validator->fails()) {
@@ -67,14 +69,15 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'email'    => $request->email,
-            'name'     => $request->fullName,
-            'password' => $request->password,
+            'email'     => $request->email,
+            'full_name' => $request->fullName,
+            'password'  => $request->password,
+            'role'      => $request->role ?? 'user',
         ]);
 
         return response()->json([
             'status'  => 201,
-            'data'    => $user->makeHidden(['password', 'refresh_token']),
+            'data'    => $user,
             'message' => 'User registered successfully',
         ], 201);
     }
@@ -84,9 +87,9 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        if (!$request->email) {
+        if (!$request->email || !$request->password) {
             return response()->json([
-                'message' => 'Email is required',
+                'message' => 'Email and password are required',
             ], 400);
         }
 
@@ -121,21 +124,21 @@ class AuthController extends Controller
                 0,
                 '/',
                 null,
-                false,
+                true,
                 true,
                 false,
-                'Lax'
+                'None'
             )
             ->cookie(
                 'refreshToken',
                 $tokens['refreshToken'],
-                0,
+                60 * 24 * 7,
                 '/',
                 null,
-                false,
+                true,
                 true,
                 false,
-                'Lax'
+                'None'
             );
     }
 
@@ -144,13 +147,14 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $user = $request->user;
-
-        $user->update(['refresh_token' => null]);
+        // If user is already resolved via middleware
+        if ($request->user) {
+            $request->user->update(['refresh_token' => null]);
+        }
 
         return response()
             ->json([
-                'status'  => 200,
+                'status' => 200,
                 'message' => 'User logged out successfully',
             ])
             ->withoutCookie('accessToken')
