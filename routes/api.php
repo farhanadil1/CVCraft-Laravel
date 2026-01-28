@@ -29,8 +29,11 @@ Route::middleware('verify.jwt')->group(function () {
 
     Route::delete('/resume/delete/{id}', [ResumeController::class, 'destroy']);
 });
-// Admin routes
-Route::middleware('verify.jwt')->group(function () {
 
-    Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
+
+Route::middleware(['verify.jwt'])->prefix('admin')->group(function () {
+
+    Route::get('/stats', [AdminController::class, 'stats']);
+    Route::get('/users', [AdminController::class, 'users']);
+    Route::get('/resumes', [AdminController::class, 'resumes']);
 });

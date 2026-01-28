@@ -54,4 +54,8 @@ class User extends Authenticatable
     {
         return $this->full_name;
     }
+    public function resumes()
+    {
+        return $this->hasMany(\App\Models\Resume::class);
+    }
 }
